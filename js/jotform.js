@@ -13273,6 +13273,14 @@ var JotForm = {
                     this.setupWorkflowOutcomes();
                 }
 
+                if (getQuerystring('showAllHiddenFields') == '1') {
+                    this.showAllHiddenFields();
+                }
+
+                if (getQuerystring('showAllFormSections') == '1') {
+                    this.showAllFormSections();
+                }
+
                 // when a form is embedded via a 3rd party app
                 this.additionalActionsFormEmbedded();
 
@@ -14302,10 +14310,36 @@ var JotForm = {
                         var errorMsg = `The following file(s) have an invalid extension: ${invalidFiles.join(', ')}. ` +
                                        `Allowed types: ${allowedExtensions.join(', ')}.`;
                         return JotForm.errored(parent, errorMsg);
-                    } else {
-                        JotForm.corrected(parent);
-                        return true;
                     }
+
+                    let sizeLimitActive = fileInput.getAttribute('data-limit-file-size') || fileInput.getAttribute('limit-file-size');
+                    let maxFileSizeKB = parseInt((fileInput.getAttribute('data-file-maxsize') || fileInput.getAttribute('file-maxsize')), 10);
+
+                    if (sizeLimitActive !== 'No' && maxFileSizeKB > 0) {
+                        let maxFileSize = maxFileSizeKB * 1024;
+                        let oversizedFiles = [];
+
+                        for (let j = 0; j < files.length; j++) {
+                            let fileToCheck = files[j];
+                            if (fileToCheck.size > maxFileSize) {
+                                let fileSizeMB = (fileToCheck.size / (1024 * 1024)).toFixed(2);
+                                oversizedFiles.push({
+                                    name: fileToCheck.name,
+                                    size: fileSizeMB + 'MB'
+                                });
+                            }
+                        }
+
+                        if (oversizedFiles.length > 0) {
+                            let maxSizeFormatted = (maxFileSize / (1024 * 1024)).toFixed(2) + 'MB';
+
+                            let fileSizeErrorMsg = `The following file(s) exceed the ${maxSizeFormatted} size limit: ${oversizedFiles.map(f => `${f.name} (${f.size})`).join(', ')}`;
+                            return JotForm.errored(parent, fileSizeErrorMsg);
+                        }
+                    }
+
+                    JotForm.corrected(parent);
+                    return true;
                 }
 
                 // eslint-disable-next-line no-var
@@ -17635,6 +17669,16 @@ var JotForm = {
         }
 
         return elemShown;
+    },
+
+    showAllHiddenFields: function () {
+        JotForm.conditions = [];
+        JotForm.fieldConditions = {};
+
+        $$('.always-hidden, .form-field-hidden').each(function(el) {
+            const id = el.getAttribute('id').split('_')[1];
+            JotForm.showField(id);
+        });
     },
 
     collectStylesheet: function () {
@@ -26469,7 +26513,7 @@ var JotForm = {
                     const questionId = data.questionId;
                     const questionElement = document.getElementById('id_' + questionId);
                     if (questionElement) {
-                        const pageSection = questionElement.closest('.page-section');             
+                        const pageSection = questionElement.closest('.page-section');
                         if (pageSection) {
                             const allSections = Array.from(document.querySelectorAll('.page-section'));
                             const pageIndex = allSections.indexOf(pageSection);
@@ -28624,6 +28668,14 @@ var JotForm = {
             }
         }
         return section;
+    },
+    showAllFormSections: function () {
+        JotForm.conditions = [];
+        JotForm.fieldConditions = {};
+
+        $$('.form-section, .page-section').each(function(section) {
+            JotForm.showFormSection(section);
+        });
     },
     getDimensions: element => {
         const computedStyles = window.getComputedStyle(element);
