@@ -12468,6 +12468,62 @@ var JotForm = {
         }
     },
 
+    initWithFakeData: function () {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const initFormWithFakeData = urlParams.get("initWithFakeData");
+
+            let baseScriptURL = 'https://cdn.jotfor.ms';
+            if (JotForm.enterprise || window.location.href.indexOf('jotform.pro') > -1) {
+                baseScriptURL = window.location.origin;
+            }
+            const fillFormWithFakeDataURL = baseScriptURL + '/s/static/latest/js/fillFormWithFakeData.js?rev=' + new Date().getTime();
+
+            if (initFormWithFakeData === "1") {
+                const highLightAnimationStyle = document.createElement('style');
+                highLightAnimationStyle.textContent = `
+                  .ai-highlight-animation-on-form-questions li {
+                    background: linear-gradient(276.14deg, rgba(151, 71, 255, 0) 3.16%, rgba(151, 71, 255, 0.13) 56.16%, rgba(151, 71, 255, 0) 93.12%) no-repeat;
+                    background-position-x: -668px;
+                    animation: ai-highlight-animation 2s forwards;
+                    animation-delay: 1s;
+                  }
+
+                  @keyframes ai-highlight-animation {
+                    0% {
+                      background-position-x: -668px;
+                    }
+                    100% {
+                      background-position-x: 668px;
+                    }
+                  }
+                `;
+                document.head.appendChild(highLightAnimationStyle);
+                const script = document.createElement('script');
+                script.type = 'module';
+                script.src = fillFormWithFakeDataURL;
+                script.onload = function() {
+                    if (window.fillFormWithFakeData) {
+                      window.fillFormWithFakeData();
+                      const questionListContainer = document.querySelector('.form-section.page-section');
+                      if (questionListContainer) {
+                        questionListContainer.classList.add('ai-highlight-animation-on-form-questions');
+                      }
+                    }
+                    setTimeout(() => {
+                      const questionListContainer = document.querySelector('.form-section.page-section');
+                      if (questionListContainer) {
+                        questionListContainer.classList.remove('ai-highlight-animation-on-form-questions');
+                      }
+                    }, 4500);
+                };
+                document.body.appendChild(script);
+            }
+        } catch (error) {
+            console.error(error)
+        }
+    },
+
     getAPIEndpoint: function() {
         if(!this.APIUrl){
             this.setAPIUrl();
@@ -12964,14 +13020,6 @@ var JotForm = {
                     window.parent.postMessage("removeIframeOnloadAttr", '*');
                 }
 
-                if(getQuerystring('itemCatalog') === '1') {
-                    const hasPaymentInLegacy = Boolean(document.querySelector('[data-payment="true"]'));
-                    const hasPaymentInCard = Boolean(document.querySelector('[data-payment="newpayment"]'));
-                    if (hasPaymentInLegacy || hasPaymentInCard) {
-                        this.loadStyleSheet('../css/styles/payment/payment_ai_catalog.css');
-                    }
-                }
-
                 // eslint-disable-next-line no-var
                 var inputSimpleFpc = document.querySelector('input[name="simple_fpc"]');
                 if (inputSimpleFpc) {
@@ -13148,6 +13196,7 @@ var JotForm = {
                 }
                 this.handleHighlightMatchedQuestions();
                 this.handleWidgetMessage();
+                this.handleParentSubmitMessage();
                 this.setButtonActions();
                 this.initGradingInputs();
                 this.initSpinnerInputs();
@@ -13228,6 +13277,7 @@ var JotForm = {
                 this.adjustWorkflowFeatures();
                 this.handleWorkflowInternalForm();
                 this.generatePaymentTransactionId();
+                this.initWithFakeData();
                 // eslint-disable-next-line no-undef
                 calculateTimeToSubmit();
                 this.setDataCSSSelector();
@@ -13277,8 +13327,8 @@ var JotForm = {
                     this.showAllHiddenFields();
                 }
 
-                if (getQuerystring('showAllFormSections') == '1') {
-                    this.showAllFormSections();
+                if (getQuerystring('showAllHiddenPages') == '1') {
+                    this.showAllHiddenPages();
                 }
 
                 // when a form is embedded via a 3rd party app
@@ -26487,6 +26537,73 @@ var JotForm = {
             document.head.appendChild(style);
         }
 
+        const setIsManuelSelected = (value) => {
+            window.isManuelSelected = value;
+        };
+
+        window.addEventListener('wheel', () => setIsManuelSelected(false), { passive: true });
+
+        const handleQuestionObserver = () => {
+            const options = {
+                threshold: 0.7
+            };
+
+            const visibleQuestions = new Set();
+            let currentSelectedId = null;
+
+            window.formQuestionObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        visibleQuestions.add(entry.target);
+                    } else {
+                        visibleQuestions.delete(entry.target);
+                    }
+                });
+
+                let topmost = null;
+                let minTop = Infinity;
+
+                if(window.isManuelSelected) return;
+
+                visibleQuestions.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < minTop) {
+                        minTop = rect.top;
+                        topmost = el;
+                    }
+                });
+
+                if (topmost) {
+                    const element = topmost;
+                    let questionId = '';
+                    if (isCardForm) {
+                        const questionWrapper = element.closest('.form-line');
+                        questionId = questionWrapper ? questionWrapper.id.replace('id_', '') : '';
+                    } else {
+                        questionId = element.id.replace('id_', '');
+                    }
+
+                    if (currentSelectedId !== questionId) {
+                        currentSelectedId = questionId;
+
+                        document.querySelectorAll('.matched-question.selected').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        element.classList.add('selected');
+
+                        if (window.parent && window.parent !== window && questionId) {
+                            window.parent.postMessage({
+                                action: 'matchedQuestionClicked',
+                                questionId: questionId
+                            }, '*');
+                        }
+                    }
+                }
+            }, options);
+
+            document.querySelectorAll('.matched-question').forEach(el => window.formQuestionObserver.observe(el));
+        }
+
         window.addEventListener("message", function (event) {
             try {
                 const { data } = event;
@@ -26503,9 +26620,13 @@ var JotForm = {
                             questionElement.classList.add('matched-question');
                         }
                     });
+
+                    handleQuestionObserver();
                 }
 
                 if (data && data.action === 'selectSelectedMatchedQuestion' && !isCardForm) {
+                    setIsManuelSelected(true);
+
                     document.querySelectorAll('.matched-question.selected').forEach(el => {
                         el.classList.remove('selected');
                     });
@@ -26564,9 +26685,13 @@ var JotForm = {
                             questionElement.classList.add('matched-question');
                         }
                     });
+
+                    handleQuestionObserver();
                 }
 
                 if(data && data.action === 'selectSelectedMatchedQuestion' && isCardForm) {
+                    setIsManuelSelected(true);
+
                     document.querySelectorAll('.matched-question.selected').forEach(el => {
                         el.classList.remove('selected');
                     });
@@ -26581,6 +26706,16 @@ var JotForm = {
                             block: 'center',
                             inline: 'nearest'
                         });
+                    }
+                }
+
+                if (data && data.action === 'toggleMatchedQuestionObserver') {
+                    if (data.isActive) {
+                        handleQuestionObserver()
+                    } else {
+                        if (window.formQuestionObserver) {
+                            window.formQuestionObserver.disconnect();
+                        }
                     }
                 }
             } catch (e) {
@@ -26599,6 +26734,11 @@ var JotForm = {
                 } else {
                     questionId = matchedQuestion.id.replace('id_', '');
                 }
+
+                document.querySelectorAll('.matched-question.selected').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                matchedQuestion.classList.add('selected');
 
                 if (window.parent && window.parent !== window) {
                     window.parent.postMessage({
@@ -26645,6 +26785,28 @@ var JotForm = {
                 console.error('ErrorOnHandleWigetMessage', e);
             }
         }, false);
+    },
+
+    handleParentSubmitMessage: function () {
+        if (window.self === window.parent) {
+            return;
+        }
+        window.addEventListener("message", function (event) {
+            try {
+                const { data: { action, source } = {} } = event || {};
+                if (source !== 'form-builder') {
+                    return;
+                }
+                if (action === 'submit-form') {
+                    const form = JotForm && JotForm.forms && JotForm.forms[0] ? JotForm.forms[0] : false;
+                    if (form) {
+                        form.submit();
+                    }
+                }
+            } catch (e) {
+                console.error('ErrorOnHandleParentSubmitMessage', e);
+            }
+        });
     },
     // Bug fix :: 3409477 (Terms & Conditions + Section Collapse Bug) & 3765441 (Section Collapse disappears when tabbed over)
     widgetSectionCollapse: function(qid) {
@@ -28184,6 +28346,8 @@ var JotForm = {
         var pages = [];
         // eslint-disable-next-line no-var
         var last;
+        const queryParameters = new URLSearchParams(window.location.search);
+        const isVerticalLayout = queryParameters.get('verticalLayout') === '1';
 
         // 345261: by default, back button containers gets its width from the label to maintain alignment
         // if they are wider than half the form, resize them
@@ -28253,6 +28417,9 @@ var JotForm = {
             var form = JotForm.getForm(section)
             section.querySelectorAll('.form-pagebreak-next').forEach(el => {
                 el.addEventListener('click', () => {
+                    if (isVerticalLayout) {
+                        return;
+                    }
                     if (JotForm.saving || JotForm.loadingPendingSubmission) {
                         return;
                     }
@@ -28350,6 +28517,9 @@ var JotForm = {
 
             section.querySelectorAll('.form-pagebreak-back').forEach(el => { // When back button is clicked
                 el.addEventListener('click', () => {
+                    if (isVerticalLayout) {
+                        return;
+                    }
                     if (!$this.noJump && window.parent && window.parent != window) {
                         window.parent.postMessage('scrollIntoView::'+form.id, '*');
                     }
@@ -28514,6 +28684,12 @@ var JotForm = {
                     JotForm.nextPage = false;
                 });
             }
+
+            if (isVerticalLayout) {
+                allSections.forEach(section => {
+                    section.style.display = 'block';
+                });
+            }
         }
     },
     /**
@@ -28669,7 +28845,7 @@ var JotForm = {
         }
         return section;
     },
-    showAllFormSections: function () {
+    showAllHiddenPages: function () {
         JotForm.conditions = [];
         JotForm.fieldConditions = {};
 
@@ -30367,6 +30543,9 @@ var JotForm = {
             // eslint-disable-next-line no-var
             var handleFormSubmit = function (e) {
                 try {
+                    if (window && window !== window.parent) {
+                        window.parent.postMessage({ action: 'submission-started' });
+                    }
                     trackSubmitSource('form');
 
                     if ($('payment_total_checksum')) {
@@ -30595,6 +30774,9 @@ var JotForm = {
                         window.localStorage.removeItem(saclKey);
                     }
 
+                    if (window && window !== window.parent) {
+                        window.parent.postMessage({ action: 'submission-end' });
+                    }
                 } catch (err) {
                     JotForm.error(err);
                     e.stop();
