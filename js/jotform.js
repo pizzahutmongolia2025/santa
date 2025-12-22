@@ -8124,7 +8124,7 @@ Object.extend(document, {
         contentClass:false, // CSS class of the content box
         buttonsClass:false, // CSS class of the buttons box
         closeButton:'X', // Close button content, can be replaced with an image
-        fullScreenButton: '<img src="images/wizard-fullscreen.png" style="width:18px; height:18px;" class="fullscreen-wiz" title="Full Screen">',
+        fullScreenButton: '<img src="assets/v3/images/wizard-fullscreen.png" style="width:18px; height:18px;" class="fullscreen-wiz" title="Full Screen">',
         allowFullScreen:false, //allow the wizard to be fullscreened
         defaultFullScreen:false, //open in fullscreen
         openEffect:true, // Enable/Disable the effect on opening
@@ -8438,7 +8438,7 @@ Object.extend(document, {
                 }
                 fullScreened = !fullScreened;
             }
-            
+
         }
 
         $(document.body).insert(win);
@@ -8667,7 +8667,7 @@ Protoplus.ui = {
             if (options.className !== "edit-option") {
                 currentValue = currentValue.unescapeHTML();
             }
-            
+
             currentValue = (currentValue == options.defaultText)? "" : currentValue;
             //currentValue = options.escapeHTML? currentValue.escapeHTML() : currentValue;
             currentValue = options.processBefore(currentValue, elem);
@@ -8908,7 +8908,7 @@ Protoplus.ui = {
                     liItem.addClassName('context-menu-item-disabled');
                 }
                 if(item.items){
-                    liItem.insert('<img align="right" src="images/right-handle.png" style="margin-top:2px;" />');
+                    liItem.insert('<img align="right" src="assets/v3/images/right-handle.png" style="margin-top:2px;" />');
                     createInnerList(liItem, item);
                 }
 
@@ -9859,7 +9859,7 @@ Protoplus.ui = {
             defaultText:"Search",
             onWrite:Prototype.K,
             onClear:Prototype.K,
-            imagePath:"images/apple_search.png"
+            imagePath:"assets/v3/images/apple_search.png"
         }, options || {});
 
         element.observe("keyup", function(e){
@@ -9955,11 +9955,11 @@ Protoplus.ui = {
             onUpdate:Prototype.K,
             maxValue:100,
             value:0,
-            buttonBack:'url("../images/ball.png") no-repeat scroll 0px 0px transparent'
+            buttonBack:'url("/assets/v3/images/ball.png") no-repeat scroll 0px 0px transparent'
         }, options || {});
 
         if("JotForm" in window && "url" in JotForm){
-            options.buttonBack = 'url("'+JotForm.url+'images/ball.png") no-repeat scroll 0px 0px transparent';
+            options.buttonBack = 'url("'+JotForm.url+'assets/v3/images/ball.png") no-repeat scroll 0px 0px transparent';
         }
 
         var valueToPixel = function(value){
@@ -10156,7 +10156,7 @@ Protoplus.ui = {
             value:false,
             allowEmpty:false,
             size: 5,
-            imgPath: 'images/',
+            imgPath: 'assets/v3/images/',
             onChange: Prototype.K
         }, options || {});
 
@@ -10177,7 +10177,7 @@ Protoplus.ui = {
             }
         }
         //check negative if minimum is not set
-        else if (!options.allowNegative && parseFloat(element.value) < 0) 
+        else if (!options.allowNegative && parseFloat(element.value) < 0)
         {
             element.value = '0';
         }
@@ -10234,7 +10234,7 @@ Protoplus.ui = {
             var newValue = parseFloat(element.value)-parseFloat(options.addAmount);
             if(options.minValue) { // Don't go below to minValue
                 if(Number(newValue) < Number(options.minValue)){ return; }
-            }  
+            }
             else if(!options.allowNegative && newValue < 0){ return; } // Don't go negative
             element.value = newValue;
             options.onChange(element.value);
@@ -10457,9 +10457,9 @@ Protoplus.ui = {
             hideOnBlur: false,
             buttonClass:'big-button buttons'
         }, options || {});
-        
+
         var customColorHex;
-        
+
         $(options.trigger || element).observe('click', function(){
             var docEvent = false;
 
@@ -10930,7 +10930,7 @@ Protoplus.ui = {
             overflow:0,
             onResize: Prototype.K,
             onResizeEnd: Prototype.K,
-            imagePath:'images/resize.png',
+            imagePath:'assets/v3/images/resize.png',
             element:false,
             maxHeight:false,
             minHeight:false,
@@ -11515,7 +11515,7 @@ Protoplus.ui = {
             var li = document.createElement('li');
             li.setAttribute("value",opt.value.strip(opt.value.stripTags()));
             li.innerHTML = opt.text.escapeHTML();
-            
+
             if(opt.hasClassName("bold")) {
                 li.setStyle('color:#555; font-weight:bold;');
             }
@@ -11611,6 +11611,7 @@ Protoplus.ui = {
     }
 };
 Element.addMethods(Protoplus.ui);
+
 /// <reference path="../../types/types.d.ts" />
 /**
  * JotForm Form object
@@ -11987,6 +11988,7 @@ var JotForm = {
     },
     EventObserver: (function intitalizeFormEventObserver() {
         const searchParams = new URLSearchParams(window.location.search);
+        const isChatgptApp = searchParams.get('app') === 'chatgpt';
         const isDebugEnabled = searchParams.get('debug') === '1';
         const isObserverEnabledByUrlParam = searchParams.get('eventObserver') === '1';
 
@@ -12096,7 +12098,7 @@ var JotForm = {
 
             // form.submit() will now send a new submit event instead of directly submitting the form.
             if (isDebugEnabled) console.log('form.submit() was called on a jotform form', this, 'calling form.requestSubmit()');
-            if (typeof window.HTMLFormElement.prototype.requestSubmit === 'function') {
+            if (typeof window.HTMLFormElement.prototype.requestSubmit === 'function' && !isChatgptApp) {
                 this.requestSubmit();
             } else {
                 _originalFormSubmitMethod.call(this)
@@ -12468,6 +12470,48 @@ var JotForm = {
         }
     },
 
+    addFakeData: function (baseScriptURL) {
+        const fillFormWithFakeDataURL = baseScriptURL + '/s/static/latest/js/fillFormWithFakeData.js?rev=' + new Date().getTime();
+        const highLightAnimationStyle = document.createElement('style');
+        highLightAnimationStyle.textContent = `
+            .ai-highlight-animation-on-form-questions li {
+            background: linear-gradient(276.14deg, rgba(151, 71, 255, 0) 3.16%, rgba(151, 71, 255, 0.13) 56.16%, rgba(151, 71, 255, 0) 93.12%) no-repeat;
+            background-position-x: -668px;
+            animation: ai-highlight-animation 2s forwards;
+            animation-delay: 1s;
+            }
+
+            @keyframes ai-highlight-animation {
+            0% {
+                background-position-x: -668px;
+            }
+            100% {
+                background-position-x: 668px;
+            }
+            }
+        `;
+        document.head.appendChild(highLightAnimationStyle);
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = fillFormWithFakeDataURL;
+        script.onload = function() {
+            if (window.fillFormWithFakeData) {
+                window.fillFormWithFakeData();
+                const questionListContainer = document.querySelector('.form-section.page-section');
+                if (questionListContainer) {
+                questionListContainer.classList.add('ai-highlight-animation-on-form-questions');
+                }
+            }
+            setTimeout(() => {
+                const questionListContainer = document.querySelector('.form-section.page-section');
+                if (questionListContainer) {
+                questionListContainer.classList.remove('ai-highlight-animation-on-form-questions');
+                }
+            }, 4500);
+        };
+        document.body.appendChild(script);
+    },
+
     initWithFakeData: function () {
         try {
             const urlParams = new URLSearchParams(window.location.search);
@@ -12477,47 +12521,9 @@ var JotForm = {
             if (JotForm.enterprise || window.location.href.indexOf('jotform.pro') > -1) {
                 baseScriptURL = window.location.origin;
             }
-            const fillFormWithFakeDataURL = baseScriptURL + '/s/static/latest/js/fillFormWithFakeData.js?rev=' + new Date().getTime();
 
             if (initFormWithFakeData === "1") {
-                const highLightAnimationStyle = document.createElement('style');
-                highLightAnimationStyle.textContent = `
-                  .ai-highlight-animation-on-form-questions li {
-                    background: linear-gradient(276.14deg, rgba(151, 71, 255, 0) 3.16%, rgba(151, 71, 255, 0.13) 56.16%, rgba(151, 71, 255, 0) 93.12%) no-repeat;
-                    background-position-x: -668px;
-                    animation: ai-highlight-animation 2s forwards;
-                    animation-delay: 1s;
-                  }
-
-                  @keyframes ai-highlight-animation {
-                    0% {
-                      background-position-x: -668px;
-                    }
-                    100% {
-                      background-position-x: 668px;
-                    }
-                  }
-                `;
-                document.head.appendChild(highLightAnimationStyle);
-                const script = document.createElement('script');
-                script.type = 'module';
-                script.src = fillFormWithFakeDataURL;
-                script.onload = function() {
-                    if (window.fillFormWithFakeData) {
-                      window.fillFormWithFakeData();
-                      const questionListContainer = document.querySelector('.form-section.page-section');
-                      if (questionListContainer) {
-                        questionListContainer.classList.add('ai-highlight-animation-on-form-questions');
-                      }
-                    }
-                    setTimeout(() => {
-                      const questionListContainer = document.querySelector('.form-section.page-section');
-                      if (questionListContainer) {
-                        questionListContainer.classList.remove('ai-highlight-animation-on-form-questions');
-                      }
-                    }, 4500);
-                };
-                document.body.appendChild(script);
+                this.addFakeData(baseScriptURL);
             }
         } catch (error) {
             console.error(error)
@@ -13142,6 +13148,17 @@ var JotForm = {
                     }
                     this.setIFrameDeviceType();
                     this.handleIFrameHeight();
+
+                    window.addEventListener('message', function (event) {
+                        const { action, baseURL } = event.data || {};
+                        if (action === 'addFakeData') {
+                            let baseScriptURL = 'https://cdn.jotfor.ms';
+                            if (JotForm.enterprise || window.location.href.indexOf('jotform.pro') > -1) {
+                                baseScriptURL = window.location.origin;
+                            }
+                            JotForm.addFakeData(baseURL || baseScriptURL);
+                        }
+                    });
 
                     // if there is a recaptcha
                     // eslint-disable-next-line no-var
@@ -14154,7 +14171,7 @@ var JotForm = {
             // eslint-disable-next-line no-var
             var script = document.createElement('script');
             script.type = "text/javascript";
-            script.src = "/js/vendor/json2.js";
+            script.src = "/s/static/latest/js/vendor/json2.js";
             document.body.appendChild(script);
         }
     },
@@ -14719,7 +14736,7 @@ var JotForm = {
             formSavingIndicatorEl.className = 'form-saving-indicator';
             formSavingIndicatorEl.style.float = 'right';
             formSavingIndicatorEl.style.padding = '21px 12px 10px';
-            formSavingIndicatorEl.innerHTML = '<img src="' + JotForm.url + 'images/ajax-loader.gif" align="absmiddle" /> Saving...';
+            formSavingIndicatorEl.innerHTML = '<img src="' + JotForm.url + 'assets/v3/images/ajax-loader.gif" align="absmiddle" /> Saving...';
 
             JotForm.currentSection.querySelector(selectPageBreak).appendChild(formSavingIndicatorEl);
         }
@@ -26344,7 +26361,7 @@ var JotForm = {
      * @param {Object} id
      */
     reloadCaptcha: function (id) {
-        document.querySelector(`#${id}_captcha`).src = JotForm.url + 'images/blank.gif';
+        document.querySelector(`#${id}_captcha`).src = JotForm.url + 'assets/v3/images/blank.gif';
         JotForm.initCaptcha(id);
     },
     /**
@@ -29134,7 +29151,17 @@ var JotForm = {
      */
 
     handleAuthNet: function () {
-        this.PCIGatewaysCardInputValidate();
+      this.PCIGatewaysCardInputValidate();
+      const testForms = ['253512712092046', '253512042793050', '253512222595050', '253512679519062'];
+      if (testForms.includes(this.getFormId()) && !!JotForm.hasAuthnetClientKey) {
+				if (typeof __authnet === "function") {
+					// eslint-disable-next-line no-undef
+					JotForm.authnetPayment = __authnet();
+					JotForm.authnetPayment.init();
+				} else{
+					alert("Authnet payment script didn't work properly. Form will be reloaded");
+				}
+			}
     },
 
     handleBluesnap: function() {
@@ -30204,12 +30231,12 @@ var JotForm = {
             if (!collapse.errored) {
               if(JotForm.newDefaultTheme){
                 collapse.select(".form-collapse-mid")[0].insert({
-                  top: '<img width="30px" height= "30px" src="' + preLink + 'images/exclamation-octagon.png"> ' // image may change for new theme
+                  top: '<img width="30px" height= "30px" src="' + preLink + 'assets/v3/images/exclamation-octagon.png"> ' // image may change for new theme
               }).setStyle({color: 'red'});
               }
               else{
                 collapse.select(".form-collapse-mid")[0].insert({
-                  top: '<img src="' + preLink + 'images/exclamation-octagon.png"> '
+                  top: '<img src="' + preLink + 'assets/v3/images/exclamation-octagon.png"> '
               }).setStyle({color: 'red'});
               }
               collapse.errored = true;
@@ -30277,7 +30304,7 @@ var JotForm = {
         formErrorArrowEl.appendChild(formErrorArrowInnerEl);
 
         // eslint-disable-next-line no-undef
-        insertEl.insert(formErrorMessageEl.insert('<img src="' + preLink + 'images/exclamation-octagon.png"> ').insert(error_message_span).insert(formErrorArrowEl));
+        insertEl.insert(formErrorMessageEl.insert('<img src="' + preLink + 'assets/v3/images/exclamation-octagon.png"> ').insert(error_message_span).insert(formErrorArrowEl));
 
         JotForm.iframeHeightCaller();
         JotForm.updateErrorNavigation();
@@ -30775,6 +30802,11 @@ var JotForm = {
                     }
 
                     if (window && window !== window.parent) {
+                        const params = new URLSearchParams(window.location.search);
+                        if (params.get('app') === 'chatgpt') {
+                            const formData = new FormData(form);
+                            window.parent.postMessage({ action: 'form-submit-request', data: formData, submitUrl: form.action });
+                        }
                         window.parent.postMessage({ action: 'submission-end' });
                     }
                 } catch (err) {
@@ -32950,7 +32982,7 @@ var JotForm = {
                 JotForm.showField(qid);
             }
             // eslint-disable-next-line no-undef
-            new nicEditor({iconsPath : location.protocol + '//www.jotform.com/images/nicEditorIcons.gif?v2'}).panelInstance('input_' + qid);
+            new nicEditor({iconsPath : location.protocol + '//www.jotform.com/assets/v3/images/nicEditorIcons.gif?v2'}).panelInstance('input_' + qid);
             JotForm.updateAreaFromRich(field);
             // hide again the initially hidden rich textarea after setup
             if (isFieldHidden) {

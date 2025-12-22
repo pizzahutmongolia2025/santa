@@ -331,7 +331,7 @@ Protoplus.ui = {
 
         });
         return element;
-    },    
+    },
     /**
      * Creates a tooltion on an element
      * @param {Object} element
@@ -545,23 +545,23 @@ Protoplus.ui = {
             i = i || 0;
             var desc = $A(element.descendants());
 
-            if (isNewTheme && element.querySelectorAll('.rated').length === i && desc[i-1]){ // `i` can be <= 0 so we must check desc[i-1] is valid 
+            if (isNewTheme && element.querySelectorAll('.rated').length === i && desc[i-1]){ // `i` can be <= 0 so we must check desc[i-1] is valid
                 desc[i-1].setStyle({ backgroundPosition:image.blank}).removeClassName("rated");
                 i = i-1;
                 elval = i;
             }
-            
+
             desc.each(function(e,c){
               e.setAttribute('aria-checked', i - 1 === c);
               if((i-1) < c){
                 e.setStyle({ backgroundPosition:image.blank}).removeClassName("rated");
               }
               else {
-                if(c<i){ 
+                if(c<i){
                   e.setStyle({backgroundPosition:image.clicked}).addClassName("rated")
                 }
               }
-            });   
+            });
             hidden.value = i || "";
             if(options.disable){
                 element.disabled = true;
@@ -657,11 +657,11 @@ Protoplus.ui = {
             onUpdate:Prototype.K,
             maxValue:100,
             value:0,
-            buttonBack:'url("../images/ball.png") no-repeat scroll 0px 0px transparent'
+            buttonBack:'url("/assets/v3/images/ball.png") no-repeat scroll 0px 0px transparent'
         }, options || {});
 
         if("JotForm" in window && "url" in JotForm){
-            options.buttonBack = 'url("'+JotForm.url+'/images/ball.png") no-repeat scroll 0px 0px transparent';
+            options.buttonBack = 'url("'+JotForm.url+'/assets/v3/images/ball.png") no-repeat scroll 0px 0px transparent';
         }
 
         var valueToPixel = function(value){
@@ -876,7 +876,7 @@ Protoplus.ui = {
             }
         }
         //check negative if minimum is not set
-        else if (!options.allowNegative && parseFloat(element.value) < 0) 
+        else if (!options.allowNegative && parseFloat(element.value) < 0)
         {
             element.value = '0';
         }
@@ -935,7 +935,7 @@ Protoplus.ui = {
             if(element.hasAttribute("disabled")) {
                 return;
             }
-            
+
             if(!parseFloat(element.value)){
                 element.value = 0;
             }
@@ -945,7 +945,7 @@ Protoplus.ui = {
             var newValue = (parseFloat(element.value)-parseFloat(options.addAmount)).toFixed(decimalPoints);
             if(options.minValue) { // Don't go below to minValue
                 if(Number(newValue) < Number(options.minValue)){ return; }
-            }  
+            }
             else if(!options.allowNegative && newValue < 0){ return; } // Don't go negative
             element.value = newValue;
             options.onChange(element.value);

@@ -3,11 +3,11 @@ function setLocationEvents(country, state, city){
     country = $(country);
     state = $(state);
     city = $(city);
-    
+
     var countryChange = function(){
-        
+
         var sel = country.getSelected();
-        
+
         if(sel.value == "other"){
             var inp = new Element('input', {size:'10'});
             country.parentNode.replaceChild(inp, country);
@@ -23,8 +23,8 @@ function setLocationEvents(country, state, city){
             city.hint('City');
             return;
         }
-        
-        var load = new Element('img', {src:'images/loader.gif', align:'absmiddle'}).setStyle({marginLeft:'3px',display:'none'});
+
+        var load = new Element('img', {src:'assets/v3/images/loader.gif', align:'absmiddle'}).setStyle({marginLeft:'3px',display:'none'});
         country.insert({after:load});
         setTimeout(function(){ load.setStyle({display:'inline'}); }, 400);
 
@@ -37,11 +37,11 @@ function setLocationEvents(country, state, city){
                 load.remove();
                 var states = t.responseText? t.responseText.evalJSON().states : t.states;
                 console.log(states);
-                
+
                 if(t.success === false){
                     return;
                 }
-                
+
                 if(states.length <= 0){
                     var inp = new Element('input', {size:'10'});
                     state.parentNode.replaceChild(inp, state);
@@ -74,11 +74,11 @@ function setLocationEvents(country, state, city){
             }
         });
     };
-                
+
     var stateChange = function(){
-        
+
         var sel = state.getSelected();
-        
+
         if(sel.value == "other"){
             var inp = new Element('input', {size:'10'});
             state.parentNode.replaceChild(inp, state);
@@ -90,11 +90,11 @@ function setLocationEvents(country, state, city){
             city.hint('City');
             return;
         }
-        
-        var load = new Element('img', {src:'images/loader.gif', align:'absmiddle'}).setStyle({marginLeft:'3px',display:'none'});
+
+        var load = new Element('img', {src:'assets/v3/images/loader.gif', align:'absmiddle'}).setStyle({marginLeft:'3px',display:'none'});
         state.insert({after:load});
         setTimeout(function(){ load.setStyle({display:'inline'}); }, 400);
-        
+
         new Ajax.Jsonp(server,{
             parameters:{
                 action:'getCities',
@@ -102,13 +102,13 @@ function setLocationEvents(country, state, city){
             },
             onComplete:function(t){
                 load.remove();
-                
+
                 var cities = (t.responseText)? t.responseText.evalJSON().cities : t.cities;
                 console.log(t, cities);
                 if(t.success === false){
                     return;
                 }
-                
+
                 if(cities.length <= 0){
                     var inp = new Element('input', {size:'10'});
                     city.parentNode.replaceChild(inp, city);
@@ -133,7 +133,7 @@ function setLocationEvents(country, state, city){
             }
         });
     };
-    
+
     var cityChange = function(){
         var sel = city.getSelected();
         if(sel.value == "other"){
@@ -143,7 +143,7 @@ function setLocationEvents(country, state, city){
             city.hint('City');
         }
     };
-    
+
     country.observe('change', countryChange);
     state.observe('change', stateChange);
     city.observe('change', cityChange);
